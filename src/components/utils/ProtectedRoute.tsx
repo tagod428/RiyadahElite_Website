@@ -17,11 +17,11 @@ const ProtectedRoute = ({ children, adminOnly = false }: ProtectedRouteProps) =>
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/login\" state={{ from: location }} replace />;
   }
 
   if (adminOnly && user?.role !== 'admin') {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/dashboard\" replace />;
   }
 
   return <>{children}</>;
