@@ -2,8 +2,10 @@ import { Suspense, lazy } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Layout from './components/layout/Layout';
 import LoadingScreen from './components/ui/LoadingScreen';
+import Toast from './components/ui/Toast';
 import { AuthProvider } from './context/AuthContext';
 import ScrollToTop from './components/utils/ScrollToTop';
+import ProtectedRoute from './components/utils/ProtectedRoute';
 
 // Lazy load pages to improve initial load performance
 const Home = lazy(() => import('./pages/Home'));
@@ -25,6 +27,7 @@ function App() {
   return (
     <AuthProvider>
       <ScrollToTop />
+      <Toast />
       <Suspense fallback={<LoadingScreen />}>
         <Routes>
           <Route path="/" element={<Layout />}>
@@ -39,8 +42,22 @@ function App() {
             <Route path="faq" element={<Faq />} />
             <Route path="login" element={<Login />} />
             <Route path="register" element={<Register />} />
-            <Route path="dashboard/*" element={<Dashboard />} />
-            <Route path="admin/*" element={<AdminPanel />} />
+            <Route
+              path="dashboard/*"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="admin/*"
+              element={
+                <ProtectedRoute adminOnly>
+                  <AdminPanel />
+                </ProtectedRoute>
+              }
+            />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
