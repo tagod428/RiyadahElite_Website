@@ -53,7 +53,7 @@ const Navbar = () => {
           {/* Logo */}
           <div className="flex-shrink-0">
             <Link to="/" className="flex items-center">
-              <Logo className="h-10 w-auto" />
+              <Logo className="h-10" />
               <span className="ml-3 text-xl font-heading font-bold gradient-text">RIYADAH ELITE</span>
             </Link>
           </div>
