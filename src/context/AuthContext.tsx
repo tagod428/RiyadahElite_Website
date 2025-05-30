@@ -1,15 +1,12 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { auth } from '../services/api';
 
 // Define User type
 type User = {
-  id: string;
-  username: string;
+  id: number;
+  name: string;
   email: string;
-  avatar: string;
-  role: 'user' | 'admin';
-  level: number;
-  points: number;
-  createdAt: string;
+  created_at: string;
 };
 
 // Define AuthContextType
@@ -19,6 +16,7 @@ type AuthContextType = {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (username: string, email: string, password: string) => Promise<void>;
+  googleAuth: (token: string) => Promise<void>;
   logout: () => void;
 };
 
@@ -29,20 +27,9 @@ const AuthContext = createContext<AuthContextType>({
   isLoading: true,
   login: async () => {},
   register: async () => {},
+  googleAuth: async () => {},
   logout: () => {},
 });
-
-// Mock user data for demonstration
-const MOCK_USER: User = {
-  id: '1',
-  username: 'gamer123',
-  email: 'gamer@example.com',
-  avatar: 'https://i.pravatar.cc/150?img=12',
-  role: 'user',
-  level: 42,
-  points: 3750,
-  createdAt: '2023-01-15',
-};
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -52,14 +39,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Simulate checking localStorage for saved auth
-        const savedUser = localStorage.getItem('riyadah_user');
-        
-        if (savedUser) {
-          setUser(JSON.parse(savedUser));
+        const token = localStorage.getItem('token');
+        if (token) {
+          const userData = await auth.getProfile();
+          setUser(userData);
         }
       } catch (error) {
         console.error('Auth check failed:', error);
+        localStorage.removeItem('token');
       } finally {
         setIsLoading(false);
       }
@@ -68,21 +55,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     checkAuth();
   }, []);
 
-  // Login function (mock implementation)
   const login = async (email: string, password: string) => {
     setIsLoading(true);
-    
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Mock validation
-      if (email && password) {
-        setUser(MOCK_USER);
-        localStorage.setItem('riyadah_user', JSON.stringify(MOCK_USER));
-      } else {
-        throw new Error('Invalid credentials');
-      }
+      const { token } = await auth.login(email, password);
+      localStorage.setItem('token', token);
+      const userData = await auth.getProfile();
+      setUser(userData);
     } catch (error) {
       console.error('Login failed:', error);
       throw error;
@@ -91,29 +70,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Register function (mock implementation)
-  const register = async (username: string, email: string, password: string) => {
+  const register = async (name: string, email: string, password: string) => {
     setIsLoading(true);
-    
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock validation
-      if (username && email && password) {
-        const newUser = {
-          ...MOCK_USER,
-          username,
-          email,
-          level: 1,
-          points: 0,
-        };
-        
-        setUser(newUser);
-        localStorage.setItem('riyadah_user', JSON.stringify(newUser));
-      } else {
-        throw new Error('Invalid registration data');
-      }
+      const { token } = await auth.register(name, email, password);
+      localStorage.setItem('token', token);
+      const userData = await auth.getProfile();
+      setUser(userData);
     } catch (error) {
       console.error('Registration failed:', error);
       throw error;
@@ -122,10 +85,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Logout function
+  const googleAuth = async (token: string) => {
+    setIsLoading(true);
+    try {
+      const { token: authToken } = await auth.googleAuth(token);
+      localStorage.setItem('token', authToken);
+      const userData = await auth.getProfile();
+      setUser(userData);
+    } catch (error) {
+      console.error('Google auth failed:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('riyadah_user');
+    localStorage.removeItem('token');
   };
 
   return (
@@ -136,6 +113,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isLoading,
         login,
         register,
+        googleAuth,
         logout,
       }}
     >
